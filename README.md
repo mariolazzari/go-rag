@@ -18,5 +18,17 @@
 [OpenAI for Go](https://github.com/openai/openai-go)
 
 ```sh
+go mod init github.com/mariolazzari/go-rag
+go mod tidy
+```
 
+### Cloud models
+
+[Ollama](https://ollama.com/)
+[Pricing](https://ollama.com/pricing)
+
+### Setting up model
+
+```sh
+curl -fsSL https://ollama.com/install.sh | sh
 ```
