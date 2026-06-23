@@ -31,4 +31,16 @@ go mod tidy
 
 ```sh
 curl -fsSL https://ollama.com/install.sh | sh
+ollama list
+ollama pull gemma3
 ```
+
+## Vector store
+
+### System prompt
+
+```sh
+./prompts/system-custom.md
+```
+
+### Vector store in Postgres
