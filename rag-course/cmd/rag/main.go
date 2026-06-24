@@ -10,7 +10,6 @@ import (
 	"syscall"
 )
 
-
 func main() {
 	// We need to:
 	// - set up the app

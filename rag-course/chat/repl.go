@@ -21,7 +21,6 @@ import (
 	"time"
 )
 
-
 // Options configures a single REPL session.
 type Options struct {
 	// SystemPromptFile is the path to a text/markdown file whose
