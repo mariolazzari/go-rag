@@ -32,16 +32,16 @@ type Config struct {
 	// server: api.openai.com, a local Ollama at :11434/v1, LM
 	// Studio, Groq, Together, vLLM, and so on. The wire protocol is
 	// the same; only the URL and model name change.
-	BaseURL string
+	BaseURL          string
 
 	// APIKey is sent as `Authorization: Bearer <key>` when non-empty.
 	// Local servers usually accept any value (or none); hosted
 	// providers require their own key.
-	APIKey string
+	APIKey           string
 
 	// Model is the chat-completions model identifier. Defaults to
 	// gpt-4o-mini so a fresh OpenAI key works with no further setup.
-	Model string
+	Model            string
 
 	// SystemPromptFile is the path to a text/markdown file whose
 	// contents become the conversation's system message. A missing
@@ -53,6 +53,7 @@ type Config struct {
 	// chat still runs, just without retrieval. Populated from
 	// DATABASE_URL.
 	DatabaseURL string
+
 
 	// EmbeddingDim is the dimensionality of the
 	// embedding model that will populate the vector column. It is
@@ -86,15 +87,15 @@ func Load() Config {
 	// environment so the program runs without one.
 	_ = godotenv.Load()
 
-	cfg := Config{
-		BaseURL:          os.Getenv("OPENAI_BASE_URL"),
-		APIKey:           os.Getenv("OPENAI_API_KEY"),
-		Model:            os.Getenv("OPENAI_MODEL"),
+	cfg := Config {
+		BaseURL: os.Getenv("OPENAI_BASE_URL"),
+		APIKey: os.Getenv("OPENAI_API_KEY"),
+		Model: os.Getenv("OPENAI_MODEL"),
 		SystemPromptFile: os.Getenv("SYSTEM_PROMPT_FILE"),
 		// Read DSN and embedding dimensionality
 		// from the environment. atoiOr below converts the dim string
 		// to int and falls back when the var is unset or malformed.
-		DatabaseURL:  os.Getenv("DATABASE_URL"),
+		DatabaseURL: os.Getenv("DATABASE_URL"),
 		EmbeddingDim: atoiOr(os.Getenv("EMBEDDING_DIM"), 0),
 	}
 
