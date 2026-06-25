@@ -18,6 +18,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -31,21 +32,38 @@ type Config struct {
 	// server: api.openai.com, a local Ollama at :11434/v1, LM
 	// Studio, Groq, Together, vLLM, and so on. The wire protocol is
 	// the same; only the URL and model name change.
-	BaseURL          string
+	BaseURL string
 
 	// APIKey is sent as `Authorization: Bearer <key>` when non-empty.
 	// Local servers usually accept any value (or none); hosted
 	// providers require their own key.
-	APIKey           string
+	APIKey string
 
 	// Model is the chat-completions model identifier. Defaults to
 	// gpt-4o-mini so a fresh OpenAI key works with no further setup.
-	Model            string
+	Model string
 
 	// SystemPromptFile is the path to a text/markdown file whose
 	// contents become the conversation's system message. A missing
 	// file is silently treated as "no system prompt".
 	SystemPromptFile string
+
+	// DatabaseURL is the libpq-style DSN for the
+	// Postgres + pgvector instance. Empty means "no vector store" —
+	// chat still runs, just without retrieval. Populated from
+	// DATABASE_URL.
+	DatabaseURL string
+
+	// EmbeddingDim is the dimensionality of the
+	// embedding model that will populate the vector column. It is
+	// baked into the column type at first migration (vector(1536) is
+	// a different SQL type from vector(768)) and cannot be changed
+	// afterward without recreating the table.
+	//
+	//   text-embedding-3-small  → 1536
+	//   text-embedding-3-large  → 3072
+	//   nomic-embed-text         → 768
+	EmbeddingDim int
 }
 
 // Load reads configuration from the environment, applying defaults
@@ -60,14 +78,24 @@ type Config struct {
 //	OPENAI_API_KEY      no default; sent as a bearer token when set
 //	OPENAI_MODEL        defaults to gpt-4o-mini
 //	SYSTEM_PROMPT_FILE	no default
+//	DATABASE_URL        no default; empty disables the vector store.
+//	                    Example: postgres://rag:rag@localhost:5432/rag?sslmode=disable
+//	EMBEDDING_DIM       defaults to 768 (matches nomic-embed-text).
 func Load() Config {
+	// A missing .env is not an error — fall back to the real process
+	// environment so the program runs without one.
 	_ = godotenv.Load()
 
-	cfg := Config {
-		BaseURL: os.Getenv("OPENAI_BASE_URL"),
-		APIKey: os.Getenv("OPENAI_API_KEY"),
-		Model: os.Getenv("OPENAI_MODEL"),
+	cfg := Config{
+		BaseURL:          os.Getenv("OPENAI_BASE_URL"),
+		APIKey:           os.Getenv("OPENAI_API_KEY"),
+		Model:            os.Getenv("OPENAI_MODEL"),
 		SystemPromptFile: os.Getenv("SYSTEM_PROMPT_FILE"),
+		// Read DSN and embedding dimensionality
+		// from the environment. atoiOr below converts the dim string
+		// to int and falls back when the var is unset or malformed.
+		DatabaseURL:  os.Getenv("DATABASE_URL"),
+		EmbeddingDim: atoiOr(os.Getenv("EMBEDDING_DIM"), 0),
 	}
 
 	if cfg.BaseURL == "" {
@@ -78,5 +106,30 @@ func Load() Config {
 		cfg.Model = "gpt-4o-mini"
 	}
 
+	// Default the embedding dimension to 768 to
+	// match nomic-embed-text (the Ollama default this course is built
+	// around) and the existing documents.embedding vector(768) column.
+	// Switch to 1536 for OpenAI's text-embedding-3-small, or 3072 for
+	// text-embedding-3-large — but note the dimension is baked into
+	// the column type at first migration, so changing it later means
+	// dropping and recreating the documents table.
+	if cfg.EmbeddingDim == 0 {
+		cfg.EmbeddingDim = 768
+	}
+
 	return cfg
+}
+
+// atoiOr parses s as an int, returning fallback
+// when s is empty or invalid. Used so an unset EMBEDDING_DIM means
+// "apply default" rather than zero.
+func atoiOr(s string, fallback int) int {
+	if s == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return fallback
+	}
+	return n
 }
