@@ -32,16 +32,16 @@ type Config struct {
 	// server: api.openai.com, a local Ollama at :11434/v1, LM
 	// Studio, Groq, Together, vLLM, and so on. The wire protocol is
 	// the same; only the URL and model name change.
-	BaseURL          string
+	BaseURL string
 
 	// APIKey is sent as `Authorization: Bearer <key>` when non-empty.
 	// Local servers usually accept any value (or none); hosted
 	// providers require their own key.
-	APIKey           string
+	APIKey string
 
 	// Model is the chat-completions model identifier. Defaults to
 	// gpt-4o-mini so a fresh OpenAI key works with no further setup.
-	Model            string
+	Model string
 
 	// SystemPromptFile is the path to a text/markdown file whose
 	// contents become the conversation's system message. A missing
@@ -54,7 +54,6 @@ type Config struct {
 	// DATABASE_URL.
 	DatabaseURL string
 
-
 	// EmbeddingDim is the dimensionality of the
 	// embedding model that will populate the vector column. It is
 	// baked into the column type at first migration (vector(1536) is
@@ -65,6 +64,17 @@ type Config struct {
 	//   text-embedding-3-large  → 3072
 	//   nomic-embed-text         → 768
 	EmbeddingDim int
+
+	// embedder endpoint config. EmbeddingBaseURL and
+	// EmbeddingAPIKey let the embedder talk to a different OpenAI-
+	// compatible endpoint than the chat client. The motivating case:
+	// a hosted chat model (Ollama Cloud, OpenAI, Groq, ...) plus a
+	// local embedder (Ollama, LM Studio, ...) — some hosted providers
+	// do not expose embedding models. When EmbeddingBaseURL is empty,
+	// the embedder reuses BaseURL/APIKey, preserving "one server for
+	// everything" for the simple case.
+	EmbeddingBaseURL string
+	EmbeddingAPIKey  string
 }
 
 // Load reads configuration from the environment, applying defaults
@@ -87,16 +97,18 @@ func Load() Config {
 	// environment so the program runs without one.
 	_ = godotenv.Load()
 
-	cfg := Config {
-		BaseURL: os.Getenv("OPENAI_BASE_URL"),
-		APIKey: os.Getenv("OPENAI_API_KEY"),
-		Model: os.Getenv("OPENAI_MODEL"),
+	cfg := Config{
+		BaseURL:          os.Getenv("OPENAI_BASE_URL"),
+		APIKey:           os.Getenv("OPENAI_API_KEY"),
+		Model:            os.Getenv("OPENAI_MODEL"),
 		SystemPromptFile: os.Getenv("SYSTEM_PROMPT_FILE"),
 		// Read DSN and embedding dimensionality
 		// from the environment. atoiOr below converts the dim string
 		// to int and falls back when the var is unset or malformed.
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		EmbeddingDim: atoiOr(os.Getenv("EMBEDDING_DIM"), 0),
+		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		EmbeddingDim:     atoiOr(os.Getenv("EMBEDDING_DIM"), 0),
+		EmbeddingBaseURL: os.Getenv("EMBEDDING_BASE_URL"),
+		EmbeddingAPIKey:  os.Getenv("EMBEDDING_API_KEY"),
 	}
 
 	if cfg.BaseURL == "" {
@@ -116,6 +128,20 @@ func Load() Config {
 	// dropping and recreating the documents table.
 	if cfg.EmbeddingDim == 0 {
 		cfg.EmbeddingDim = 768
+	}
+
+	// When the user hasn't pointed the embedder at a
+	// separate endpoint, reuse the chat endpoint and key — preserving
+	// "one OpenAI-compatible server for everything" for the simple
+	// case. When EMBEDDING_BASE_URL IS set we leave the API key alone:
+	// a different host means a different (or no) credential, and
+	// silently borrowing the chat key would send it to a server that
+	// didn't ask for it.
+	if cfg.EmbeddingBaseURL == "" {
+		cfg.EmbeddingBaseURL = cfg.BaseURL
+		if cfg.EmbeddingAPIKey == "" {
+			cfg.EmbeddingAPIKey = cfg.APIKey
+		}
 	}
 
 	return cfg

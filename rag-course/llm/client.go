@@ -60,20 +60,49 @@ type Client struct {
 	sdk openai.Client
 }
 
-// New returns a Client bound to the supplied configuration. Non-empty
-// BaseURL and APIKey are forwarded to the SDK as explicit options;
-// empty values are skipped so the SDK falls back to its own env-var
-// defaults. APIKey in particular is skipped when empty because local
-// providers (Ollama, LM Studio) don't require auth and a "Bearer "
-// header with no token trips some servers.
+// New returns a Client bound to the supplied configuration, using the
+// chat endpoint (BaseURL/APIKey) to talk to the server. Non-empty
+// values are forwarded to the SDK as explicit options; empty values
+// are skipped so the SDK falls back to its own env-var defaults.
+// APIKey in particular is skipped when empty because local providers
+// (Ollama, LM Studio) don't require auth and a "Bearer " header with
+// no token trips some servers.
+//
+// New is now the chat-side constructor. For embeddings,
+// callers should use NewEmbedder so the embedder can target a
+// different endpoint when EMBEDDING_BASE_URL is set.
 func New(cfg config.Config) *Client {
+	return newClient(cfg, cfg.BaseURL, cfg.APIKey)
+}
+
+//	NewEmbedder returns a Client whose underlying HTTP
+//
+// target is the embedding endpoint (EmbeddingBaseURL/EmbeddingAPIKey).
+// Embed is the only method intended to be called on the resulting
+// client; chat calls would go to the embedding-only server, which
+// usually has no chat model.
+//
+// The split exists because some providers — Ollama Cloud at the time
+// of writing — host chat models but no embedding models. Students who
+// want to mix a hosted chat model with a local embedder can do so by
+// setting EMBEDDING_BASE_URL without touching the chat path. When
+// EMBEDDING_BASE_URL is empty, config falls it back to BaseURL, so
+// this returns a client equivalent to New(cfg).
+func NewEmbedder(cfg config.Config) *Client {
+	return newClient(cfg, cfg.EmbeddingBaseURL, cfg.EmbeddingAPIKey)
+}
+
+// newClient builds a Client targeted at the supplied
+// baseURL/apiKey. The full Config is retained so the caller can read
+// back model identifiers (Model, EmbeddingModel) on later calls.
+func newClient(cfg config.Config, baseURL, apiKey string) *Client {
 	opts := []option.RequestOption{}
 
-	if cfg.BaseURL != "" {
-		opts = append(opts, option.WithBaseURL(cfg.BaseURL))
+	if baseURL != "" {
+		opts = append(opts, option.WithBaseURL(baseURL))
 	}
-	if cfg.APIKey != "" {
-		opts = append(opts, option.WithAPIKey(cfg.APIKey))
+	if apiKey != "" {
+		opts = append(opts, option.WithAPIKey(apiKey))
 	}
 
 	return &Client{cfg: cfg, sdk: openai.NewClient(opts...)}
