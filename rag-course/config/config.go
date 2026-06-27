@@ -113,9 +113,9 @@ func Load() Config {
 		EmbeddingDim:     atoiOr(os.Getenv("EMBEDDING_DIM"), 0),
 		EmbeddingBaseURL: os.Getenv("EMBEDDING_BASE_URL"),
 		EmbeddingAPIKey:  os.Getenv("EMBEDDING_API_KEY"),
-		EmbeddingModel:   os.Getenv("EMBEDDING_MODEL"),
-		IngestDir:        os.Getenv("INGEST_DIR"),
-		ProcessedDir:     os.Getenv("PROCESSED_DIR"),
+		EmbeddingModel: os.Getenv("EMBEDDING_MODEL"),
+		IngestDir: os.Getenv("INGEST_DIR"),
+		ProcessedDir: os.Getenv("PROCESSED_DIR"),
 	}
 
 	if cfg.BaseURL == "" {
