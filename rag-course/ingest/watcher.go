@@ -51,7 +51,7 @@ func Watch(ctx context.Context, opts Options, embedder llm.Embedder, store vecto
 		}
 		dst := filepath.Join(opts.ProcessedDir, filepath.Base(path))
 		if err := os.Rename(path, dst); err != nil {
-			logger.Printf("move %s to processed: %v", err)
+			logger.Printf("move %s to processed: %v", filepath.Base(path), err)
 			return
 		}
 		logger.Printf("ingested %s", filepath.Base(path))
