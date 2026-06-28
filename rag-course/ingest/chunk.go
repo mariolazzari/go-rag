@@ -1,5 +1,5 @@
 // A boundary-aware byte splitter used by the ingest pipeline.
-package chunk
+package ingest
 
 import "strings"
 

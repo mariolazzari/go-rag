@@ -27,7 +27,7 @@
 // embeddings sit closest to it. Steps 3 and 5 here are what make that
 // lookup possible.
 
-package chunk
+package ingest
 
 import (
 	"context"
