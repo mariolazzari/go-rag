@@ -540,3 +540,9 @@ func formatContext(hits []vector.Result) string {
 	return strings.TrimSpace(sb.String())
 }
 ```
+
+### Retreiver
+
+```go
+
+```
