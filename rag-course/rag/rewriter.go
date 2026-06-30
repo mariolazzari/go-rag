@@ -22,6 +22,10 @@ type Rewriter struct {
 	client *llm.Client
 }
 
+func NewRewriter(client *llm.Client) *Rewriter {
+	return &Rewriter{client: client}
+}
+
 func (r *Rewriter) Rewrite(ctx context.Context, history []llm.Message) (string, error) {
 	last := lastUserMessage(history)
 	if last == "" {
@@ -49,7 +53,7 @@ func (r *Rewriter) Rewrite(ctx context.Context, history []llm.Message) (string, 
 	}
 
 	return out, nil
-
+	
 }
 
 func hasAssistantTurn(history []llm.Message) bool {
