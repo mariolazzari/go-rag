@@ -75,7 +75,8 @@ func New(cfg config.Config) *Client {
 	return newClient(cfg, cfg.BaseURL, cfg.APIKey)
 }
 
-//  NewEmbedder returns a Client whose underlying HTTP
+//	NewEmbedder returns a Client whose underlying HTTP
+//
 // target is the embedding endpoint (EmbeddingBaseURL/EmbeddingAPIKey).
 // Embed is the only method intended to be called on the resulting
 // client; chat calls would go to the embedding-only server, which

@@ -59,7 +59,6 @@ func (r *Retriever) Retrieve(ctx context.Context, history []llm.Message) (string
 		return "", nil
 	}
 
-
 	// return the formatted context
 	return formatContext(hits), nil
 }
