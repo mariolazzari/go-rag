@@ -79,6 +79,10 @@ type Config struct {
 	EmbeddingModel string
 	IngestDir      string
 	ProcessedDir   string
+
+	HTTPAddr    string
+	ImageDir    string
+	VisionModel string
 }
 
 // Load reads configuration from the environment, applying defaults
@@ -113,9 +117,12 @@ func Load() Config {
 		EmbeddingDim:     atoiOr(os.Getenv("EMBEDDING_DIM"), 0),
 		EmbeddingBaseURL: os.Getenv("EMBEDDING_BASE_URL"),
 		EmbeddingAPIKey:  os.Getenv("EMBEDDING_API_KEY"),
-		EmbeddingModel: os.Getenv("EMBEDDING_MODEL"),
-		IngestDir: os.Getenv("INGEST_DIR"),
-		ProcessedDir: os.Getenv("PROCESSED_DIR"),
+		EmbeddingModel:   os.Getenv("EMBEDDING_MODEL"),
+		IngestDir:        os.Getenv("INGEST_DIR"),
+		ProcessedDir:     os.Getenv("PROCESSED_DIR"),
+		HTTPAddr:         os.Getenv("HTTP_ADDR"),
+		ImageDir:         os.Getenv("IMAGES_DIR"),
+		VisionModel:      os.Getenv("VISION_MODEL"),
 	}
 
 	if cfg.BaseURL == "" {
@@ -161,6 +168,10 @@ func Load() Config {
 
 	if cfg.ProcessedDir == "" {
 		cfg.ProcessedDir = "./documents/processed"
+	}
+
+	if cfg.ImageDir == "" {
+		cfg.ImageDir = "./documents/images"
 	}
 
 	return cfg
